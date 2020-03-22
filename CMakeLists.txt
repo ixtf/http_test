@@ -1,0 +1,23 @@
+CMAKE_MINIMUM_REQUIRED(VERSION 3.15)
+
+PROJECT(HTTP_TEST)
+
+SET(CMAKE_CXX_STANDARD 20)
+
+ADD_SUBDIRECTORY(src bin)
+
+INSTALL(TARGETS http_test
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION libstatic
+        )
+INSTALL(DIRECTORY doc/ DESTINATION doc)
+INSTALL(FILES README.md DESTINATION .)
+
+#INSTALL(TARGETS myrun mylib mystaticlib
+#        RUNTIME DESTINATION bin
+#        LIBRARY DESTINATION lib
+#        ARCHIVE DESTINATION libstatic
+#        )
+
+# cmake -DCMAKE_INSTALL_PREFIX=/tmp/cmakebin /Users/jzb/CLionProjects/http-test
