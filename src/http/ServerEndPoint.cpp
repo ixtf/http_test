@@ -6,8 +6,10 @@
 
 void WebSocketSession::sendText(const std::string &content) {
     mg_send_websocket_frame(nc_, WEBSOCKET_OP_TEXT, content.c_str(), content.size());
+}
 
-//    mg_send_websocket_frame(nc_,WEBSOCKET_OP_BINARY)
+void WebSocketSession::sendBinary(const void *buffer, const long size) {
+    mg_send_websocket_frame(nc_, WEBSOCKET_OP_BINARY, buffer, size);
 }
 
 void ServerEndPoint::OnOpen(mg_connection *nc_) {
@@ -28,6 +30,12 @@ void ServerEndPoint::OnMessage(mg_connection *nc, websocket_message *wm) {
 void ServerEndPoint::BroadcastText(const std::string &content) {
     for (auto session:sessions_) {
         session.sendText(content);
+    }
+}
+
+void ServerEndPoint::BroadcastBinary(const void *buffer, const long size) {
+    for (auto session:sessions_) {
+        session.sendBinary(buffer, size);
     }
 }
 

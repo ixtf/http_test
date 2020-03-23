@@ -1,5 +1,4 @@
 #include "http/HTTP.hpp"
-#include "http/RoutingContext.hpp"
 #include "ChatServerEndPoint.hpp"
 #include "ImageServerEndPoint.hpp"
 #include <iostream>
@@ -38,7 +37,7 @@ int main() {
                     fputs("Reading error", stderr);
                     exit(3);
                 }
-                ImageServerEndPoint::getInstance().BroadcastBinary(buffer);
+                ImageServerEndPoint::getInstance().BroadcastBinary(buffer, lSize);
 
                 fclose(pFile);
                 free(buffer);

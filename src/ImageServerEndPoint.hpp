@@ -21,11 +21,11 @@ public:
     }
 
 protected:
-    void OnOpen(WebSocketSession &session) override;
+    void OnOpen(WebSocketSession &session) override {};
 
     void OnMessage(WebSocketSession &session, const std::string &message) override;
 
-    void OnClose(WebSocketSession &session) override;
+    void OnClose(WebSocketSession &session) override {};
 
 private:
     ImageServerEndPoint() {};

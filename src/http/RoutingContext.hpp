@@ -5,11 +5,9 @@
 #ifndef HTTP_TEST_ROUTINGCONTEXT_HPP
 #define HTTP_TEST_ROUTINGCONTEXT_HPP
 
-#include "mongoose.h"
+#include "MongooseHelper.hpp"
 #include <string>
 #include <map>
-#include <iostream>
-#include <functional>
 
 const std::string CONTENT_TYPE = "Content-Type";
 

@@ -31,6 +31,8 @@ public:
 
     void sendText(const std::string &content);
 
+    void sendBinary(const void *buffer, const long size);
+
 private:
     mg_connection *nc_;
 };
@@ -45,7 +47,7 @@ public:
 
     void BroadcastText(const std::string &content);
 
-    void BroadcastBinary(const char *buffer);
+    void BroadcastBinary(const void *buffer, const long size);
 
     void OnClose(mg_connection *nc_);
     // todo 了解cpp异常
