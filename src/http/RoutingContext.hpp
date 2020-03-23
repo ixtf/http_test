@@ -9,6 +9,7 @@
 #include <string>
 #include <map>
 #include <iostream>
+#include <functional>
 
 inline static bool mg_str_equal(const mg_str *s1, const mg_str *s2) {
     return s1->len == s2->len && memcmp(s1->p, s2->p, s2->len) == 0;
@@ -24,7 +25,7 @@ public:
         std::cout << "~RoutingRequest()" << std::endl;
     }
 
-    void header(const std::string &key, std::string &value);
+    std::string header(const std::string &key);
 
     template<typename T>
     T body(std::function<T(std::string &body)> fun) {

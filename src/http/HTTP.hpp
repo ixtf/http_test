@@ -33,7 +33,12 @@ public:
 
     static void Broadcast(const std::string &uri, const std::string &content);
 
-    void AddHandler(const std::string &service, const std::string &action, std::function<void(RoutingContext &rc)> h);
+    HTTP &AddHandler(const std::string &service, const std::string &action, std::function<void(RoutingContext &rc)> h);
+
+    void Start() {
+        HTTP_OPTION option;
+        Start(option);
+    }
 
     void Start(const HTTP_OPTION &option);
 

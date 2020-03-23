@@ -5,8 +5,8 @@
 #include "HTTP.hpp"
 
 static bool kInit = true;
-static mg_str kMethodGET = MG_MK_STR("GET");
-static mg_str kMethodPOST = MG_MK_STR("POST");
+static const mg_str kMethodGET = MG_MK_STR("GET");
+static const mg_str kMethodPOST = MG_MK_STR("POST");
 static mg_str kHealthUri = MG_MK_STR("/health");
 static mg_str kApiUri = MG_MK_STR("/api");
 static mg_str kService = MG_MK_STR("X-SERVICE");
@@ -98,17 +98,20 @@ HTTP::~HTTP() {
     mg_mgr_free(&kMgMgr);
 }
 
-void HTTP::AddHandler(const std::string &service, const std::string &action, std::function<void(RoutingContext &)> h) {
+HTTP &HTTP::AddHandler(const std::string &service, const std::string &action, std::function<void(RoutingContext &)> h) {
     auto key = service + "." + action;
     kHandlerMap[key] = h;
+    return *this;
 }
 
 void HTTP::Start(const HTTP_OPTION &option) {
     if (!kInit) {
         return;
     }
+
     mg_mgr_init(&kMgMgr, NULL);
-    mg_connection *nc = mg_bind(&kMgMgr, option.port.c_str(), mg_ev_handler);
+    const char *port = option.port.empty() ? "8080" : option.port.c_str();
+    mg_connection *nc = mg_bind(&kMgMgr, port, mg_ev_handler);
     mg_set_protocol_http_websocket(nc);
 
     signal(SIGINT, signal_handler);
