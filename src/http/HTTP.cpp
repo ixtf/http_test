@@ -3,91 +3,91 @@
 //
 
 #include "HTTP.hpp"
+#include "MongooseHelper.hpp"
+#include <iostream>
 
 static bool kInit = true;
-static const mg_str kMethodGET = MG_MK_STR("GET");
-static const mg_str kMethodPOST = MG_MK_STR("POST");
 static mg_str kHealthUri = MG_MK_STR("/health");
 static mg_str kApiUri = MG_MK_STR("/api");
 static mg_str kService = MG_MK_STR("X-SERVICE");
 static mg_str kAction = MG_MK_STR("X-ACTION");
 static std::map<std::string, std::function<void(RoutingContext &)>> kHandlerMap;
+static std::map<std::string, ServerEndPoint *> kEndPointMap;
 
 static int kSigNum = 0;
 static mg_mgr kMgMgr;
 static mg_serve_http_opts kMgServeHttpOpts;
 
-inline static void signal_handler(int sig_num) {
-    signal(sig_num, signal_handler);
+inline static void signalHandler(const int sig_num) {
+    signal(sig_num, signalHandler);
     kSigNum = sig_num;
 }
 
-static void serve_websocket(mg_connection *nc, const websocket_message *wm) {
-    mg_connection *c;
-    char buf[500];
-    char addr[32];
-    mg_sock_addr_to_str(&nc->sa, addr, sizeof(addr), MG_SOCK_STRINGIFY_IP | MG_SOCK_STRINGIFY_PORT);
-
-    for (c = mg_next(nc->mgr, NULL); c != NULL; c = mg_next(nc->mgr, c)) {
-        if (c == nc) {
-            continue;
-        }
-        mg_send_websocket_frame(c, WEBSOCKET_OP_TEXT, buf, strlen(buf));
-    }
-}
-
-static std::function<void(RoutingContext &)> find_handler(http_message *hm) {
+static std::function<void(RoutingContext &)> findHandler(http_message *hm) {
     std::string service;
     std::string action;
     for (int i = 0; i < MG_MAX_HTTP_HEADERS && hm->header_names[i].len > 0; i++) {
-        struct mg_str hn = hm->header_names[i];
-        struct mg_str hv = hm->header_values[i];
-//        printf("%.*s : %.*s \n", (int) hn.len, hn.p, (int) hv.len, hv.p);
-        if (mg_str_equal(&kService, &hn)) {
+        mg_str hn = hm->header_names[i];
+        mg_str hv = hm->header_values[i];
+        if (MongooseHelper::StrEqual(&kService, &hn)) {
             service = std::string(hv.p, hv.len);
             continue;
         }
-        if (mg_str_equal(&kAction, &hn)) {
+        if (MongooseHelper::StrEqual(&kAction, &hn)) {
             action = std::string(hv.p, hv.len);
             continue;
         }
     }
-    if (service.length() == 0 || action.length() == 0) {
-        return NULL;
+    if (service.size() > 0 && action.size() > 0) {
+        auto iter = kHandlerMap.find(service + "." + action);
+        return iter != kHandlerMap.end() ? iter->second : NULL;
     }
-    std::string key = service + "." + action;
-    auto iter = kHandlerMap.find(key);
-    if (iter == kHandlerMap.end()) {
-        return NULL;
-    };
-    return iter->second;
+    return NULL;
 }
 
 static void mg_ev_handler(mg_connection *nc, int ev, void *ev_data) {
     switch (ev) {
+        case MG_EV_WEBSOCKET_HANDSHAKE_DONE: {
+            auto *hm = (http_message *) ev_data;
+            auto entry = kEndPointMap.find(std::string(hm->uri.p, hm->uri.len));
+            if (entry != kEndPointMap.end()) {
+                entry->second->OnOpen(nc);
+            }
+            return;
+        }
         case MG_EV_WEBSOCKET_FRAME: {
-            websocket_message *wm = (websocket_message *) ev_data;
-            serve_websocket(nc, wm);
+            auto *wm = (websocket_message *) ev_data;
+            for (auto entry:kEndPointMap) {
+                entry.second->OnMessage(nc, wm);
+            }
+            return;
+        }
+        case MG_EV_CLOSE: {
+            if (MongooseHelper::IsWebsocket(nc)) {
+                for (auto entry:kEndPointMap) {
+                    entry.second->OnClose(nc);
+                }
+            }
             return;
         }
         case MG_EV_HTTP_REQUEST: {
-            http_message *hm = (http_message *) ev_data;
-            if (mg_str_equal(&kMethodGET, &hm->method)) {
-                if (mg_str_equal(&kHealthUri, &hm->uri)) {
-                    RoutingResponse::End_health(nc);
+            auto *hm = (http_message *) ev_data;
+            if (MongooseHelper::IsGET(hm)) {
+                if (MongooseHelper::StrEqual(&kHealthUri, &hm->uri)) {
+                    MongooseHelper::End_health(nc);
                 } else {
                     mg_serve_http(nc, hm, kMgServeHttpOpts);
                 }
-            } else if (mg_str_equal(&kMethodPOST, &hm->method) && mg_str_equal(&kApiUri, &hm->uri)) {
-                auto handler = find_handler(hm);
-                if (handler == NULL) {
-                    RoutingResponse::End_404(nc);
-                } else {
+            } else if (MongooseHelper::IsPOST(hm) && MongooseHelper::StrEqual(&kApiUri, &hm->uri)) {
+                auto handler = findHandler(hm);
+                if (handler) {
                     RoutingContext rc(nc, hm);
                     handler(rc);
+                } else {
+                    MongooseHelper::End_404(nc);
                 }
             } else {
-                RoutingResponse::End_404(nc);
+                MongooseHelper::End_404(nc);
             }
             return;
         }
@@ -95,12 +95,20 @@ static void mg_ev_handler(mg_connection *nc, int ev, void *ev_data) {
 }
 
 HTTP::~HTTP() {
+    kHandlerMap.clear();
+    kEndPointMap.clear();
     mg_mgr_free(&kMgMgr);
+    kInit = true;
+    kSigNum = 0;
 }
 
 HTTP &HTTP::AddHandler(const std::string &service, const std::string &action, std::function<void(RoutingContext &)> h) {
-    auto key = service + "." + action;
-    kHandlerMap[key] = h;
+    kHandlerMap[service + "." + action] = h;
+    return *this;
+}
+
+HTTP &HTTP::AddEndPoint(ServerEndPoint &endPoint) {
+    kEndPointMap[endPoint.GetUri()] = &endPoint;
     return *this;
 }
 
@@ -111,11 +119,14 @@ void HTTP::Start(const HTTP_OPTION &option) {
 
     mg_mgr_init(&kMgMgr, NULL);
     const char *port = option.port.empty() ? "8080" : option.port.c_str();
+    if (!option.document_root.empty()) {
+        kMgServeHttpOpts.document_root = option.document_root.c_str();
+    }
     mg_connection *nc = mg_bind(&kMgMgr, port, mg_ev_handler);
     mg_set_protocol_http_websocket(nc);
 
-    signal(SIGINT, signal_handler);
-    signal(SIGTERM, signal_handler);
+    signal(SIGINT, signalHandler);
+    signal(SIGTERM, signalHandler);
 
     kInit = false;
     while (kSigNum == 0) {
