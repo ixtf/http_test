@@ -8,6 +8,7 @@
 #include "MongooseHelper.hpp"
 #include <string>
 #include <map>
+#include <functional>
 
 const std::string CONTENT_TYPE = "Content-Type";
 

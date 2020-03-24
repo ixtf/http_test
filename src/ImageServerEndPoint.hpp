@@ -5,7 +5,7 @@
 #ifndef HTTP_TEST_IMAGESERVERENDPOINT_HPP
 #define HTTP_TEST_IMAGESERVERENDPOINT_HPP
 
-#include "http/ServerEndPoint.hpp"
+#include "http/HTTP.hpp"
 
 class ImageServerEndPoint : public ServerEndPoint {
 public:
@@ -13,12 +13,14 @@ public:
 
     void operator=(ImageServerEndPoint const &) = delete;
 
-    const std::string &GetUri() override;
-
     static ImageServerEndPoint &getInstance() {
         static ImageServerEndPoint instance;
         return instance;
     }
+
+    const std::string &GetUri() override;
+
+    static void handleTest(RoutingContext &rc);
 
 protected:
     void OnOpen(WebSocketSession &session) override {};
