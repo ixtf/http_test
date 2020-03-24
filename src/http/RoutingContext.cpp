@@ -29,11 +29,3 @@ void RoutingResponse::end() {
         }
     }
 }
-
-//void RoutingContext::end(std::string body) {
-//    mg_printf(nc_,
-//              "HTTP/1.1 200 OK\r\n"
-//              "Content-Type: application/json\r\n"
-//              "Content-Length: %d\r\n\r\n%s",
-//              (int) body.size(), body.c_str());
-//}

@@ -958,14 +958,14 @@ static void byteReverse(unsigned char *buf, unsigned longs) {
 /* Forrest: MD5 expect LITTLE_ENDIAN, swap if BIG_ENDIAN */
 #if BYTE_ORDER == BIG_ENDIAN
     do {
-        uint32_t t = (uint32_t)((unsigned) buf[3] << 8 | buf[2]) << 16 |
-                     ((unsigned) buf[1] << 8 | buf[0]);
-        *(uint32_t *) buf = t;
-        buf += 4;
-    } while (--longs);
+    uint32_t t = (uint32_t)((unsigned) buf[3] << 8 | buf[2]) << 16 |
+                 ((unsigned) buf[1] << 8 | buf[0]);
+    *(uint32_t *) buf = t;
+    buf += 4;
+  } while (--longs);
 #else
     (void) buf;
-  (void) longs;
+    (void) longs;
 #endif
 }
 
@@ -2431,7 +2431,7 @@ void mg_mgr_init_opt(struct mg_mgr *m, void *user_data,
 #elif defined(__unix__)
     /* Ignore SIGPIPE signal, so if client cancels the request, it
    * won't kill the whole process. */
-    signal(SIGPIPE, SIG_IGN);
+  signal(SIGPIPE, SIG_IGN);
 #endif
 
     {
@@ -3966,7 +3966,7 @@ void mg_socket_if_remove_conn(struct mg_connection *nc) {
 
 void mg_add_to_set(sock_t sock, fd_set *set, sock_t *max_fd) {
     if (sock != INVALID_SOCKET
-        #ifdef __unix__
+#ifdef __unix__
         && sock < (sock_t) FD_SETSIZE
 #endif
             ) {
@@ -4010,22 +4010,22 @@ time_t mg_socket_if_poll(struct mg_iface *iface, int timeout_ms) {
 
 #ifdef __unix__
             /* A hack to make sure all our file descriptos fit into FD_SETSIZE. */
-            if (nc->sock >= (sock_t) FD_SETSIZE && try_dup) {
-                int new_sock = dup(nc->sock);
-                if (new_sock >= 0) {
-                    if (new_sock < (sock_t) FD_SETSIZE) {
-                        closesocket(nc->sock);
-                        DBG(("new sock %d -> %d", nc->sock, new_sock));
-                        nc->sock = new_sock;
-                    } else {
-                        closesocket(new_sock);
-                        DBG(("new sock is still larger than FD_SETSIZE, disregard"));
-                        try_dup = 0;
-                    }
-                } else {
-                    try_dup = 0;
-                }
-            }
+      if (nc->sock >= (sock_t) FD_SETSIZE && try_dup) {
+        int new_sock = dup(nc->sock);
+        if (new_sock >= 0) {
+          if (new_sock < (sock_t) FD_SETSIZE) {
+            closesocket(nc->sock);
+            DBG(("new sock %d -> %d", nc->sock, new_sock));
+            nc->sock = new_sock;
+          } else {
+            closesocket(new_sock);
+            DBG(("new sock is still larger than FD_SETSIZE, disregard"));
+            try_dup = 0;
+          }
+        } else {
+          try_dup = 0;
+        }
+      }
 #endif
 
             if (nc->recv_mbuf.len < nc->recv_mbuf_limit &&
@@ -7152,7 +7152,7 @@ void mg_http_serve_file_internal(struct mg_connection *nc,
                 cl = r2 - r1 + 1;
                 snprintf(range, sizeof(range),
                          "Content-Range: bytes %" INT64_FMT "-%" INT64_FMT
-                         "/%" INT64_FMT "\r\n",
+                                 "/%" INT64_FMT "\r\n",
                          r1, r1 + cl - 1, (int64_t) st.st_size);
 #if _FILE_OFFSET_BITS == 64 || _POSIX_C_SOURCE >= 200112L || \
     _XOPEN_SOURCE >= 600

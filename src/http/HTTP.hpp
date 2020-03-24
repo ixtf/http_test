@@ -6,17 +6,15 @@
 #define HTTP_TEST_HTTP_HPP
 
 #include "RoutingContext.hpp"
-#include <string>
-#include <map>
+#include "ServerEndPoint.hpp"
 
 typedef struct {
     std::string port;
+    std::string document_root;
     std::string health_uri;
     std::string service_param;
     std::string action_param;
 } HTTP_OPTION;
-
-//typedef void (*HTTP_HANDLER)(RoutingContext &rc);
 
 class HTTP {
 public:
@@ -31,11 +29,11 @@ public:
         return instance;
     }
 
-    static void Broadcast(const std::string &uri, const std::string &content);
-
     HTTP &AddHandler(const std::string &service, const std::string &action, std::function<void(RoutingContext &rc)> h);
 
-    void Start() {
+    HTTP &AddEndPoint(ServerEndPoint &endPoint);
+
+    void Start(void) {
         HTTP_OPTION option;
         Start(option);
     }

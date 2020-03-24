@@ -5,25 +5,16 @@
 #ifndef HTTP_TEST_ROUTINGCONTEXT_HPP
 #define HTTP_TEST_ROUTINGCONTEXT_HPP
 
-#include "mongoose.h"
+#include "MongooseHelper.hpp"
 #include <string>
 #include <map>
-#include <iostream>
 #include <functional>
-
-inline static bool mg_str_equal(const mg_str *s1, const mg_str *s2) {
-    return s1->len == s2->len && memcmp(s1->p, s2->p, s2->len) == 0;
-}
 
 const std::string CONTENT_TYPE = "Content-Type";
 
 class RoutingRequest {
 public:
     RoutingRequest(mg_connection *nc, http_message *hm) : nc_(nc), hm_(hm) {}
-
-    ~RoutingRequest() {
-        std::cout << "~RoutingRequest()" << std::endl;
-    }
 
     std::string header(const std::string &key);
 
@@ -44,10 +35,6 @@ public:
         headers_[CONTENT_TYPE] = "application/json";
     }
 
-    ~RoutingResponse() {
-        std::cout << "~RoutingResponse()" << std::endl;
-    }
-
     inline RoutingResponse &header(const std::string &key, const std::string &value) {
         headers_[key] = value;
         return *this;
@@ -65,19 +52,6 @@ public:
         end(body);
     }
 
-public:
-    inline static void End_health(mg_connection *nc) {
-        mg_printf(nc, "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n");
-    }
-
-    inline static void End_404(mg_connection *nc) {
-        mg_printf(nc, "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n");
-    }
-
-    inline static void End_500(mg_connection *nc) {
-        mg_printf(nc, "HTTP/1.1 500 Server Error\r\nContent-Length: 0\r\n\r\n");
-    }
-
 private:
     mg_connection *nc_;
     std::map<std::string, std::string> headers_;
@@ -88,10 +62,6 @@ private:
 class RoutingContext {
 public:
     RoutingContext(mg_connection *nc, http_message *hm) : request(nc, hm), response(nc) {}
-
-    ~RoutingContext() {
-        std::cout << "~RoutingContext()" << std::endl;
-    }
 
     RoutingRequest request;
     RoutingResponse response;
