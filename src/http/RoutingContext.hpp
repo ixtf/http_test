@@ -40,7 +40,10 @@ public:
         return *this;
     }
 
-    void end();
+    inline RoutingResponse status(const int status) {
+        status_ = status;
+        return *this;
+    }
 
     void end(const std::string &body) {
         body_ = body;
@@ -49,8 +52,11 @@ public:
 
     void end(const int status, const std::string &body) {
         status_ = status;
-        end(body);
+        body_ = body;
+        end();
     }
+
+    void end();
 
 private:
     mg_connection *nc_;

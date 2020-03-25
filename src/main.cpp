@@ -7,6 +7,9 @@ int main() {
     HTTP &http = HTTP::getInstance()
             .AddEndPoint(ImageServerEndPoint::getInstance())
             .AddHandler("ImageService", "test", ImageServerEndPoint::handleTest)
+            .AddHandler("SMCService", "test", [](RoutingContext &rc) {
+
+            })
 
             .AddEndPoint(ChatServerEndPoint::getInstance())
             .AddHandler("HelloService", "hello", [](RoutingContext &rc) {
